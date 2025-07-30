@@ -1,0 +1,54 @@
+# roles/vault/tasks/main.yaml
+- name: Create Vault data and config directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ vault_data_dir }}"
+    - "{{ vault_config_dir }}"
+
+- name: Write Vault config.hcl
+  copy:
+    dest: "{{ vault_config_dir }}/config.hcl"
+    content: |
+      storage "file" {
+        path = "{{ vault_data_dir }}"
+      }
+      listener "tcp" {
+        address     = "0.0.0.0:8200"
+        tls_disable = 1
+      }
+      ui = true
+
+- name: Run Vault container
+  containers.podman.podman_container:
+    name: vault
+    image: "{{ vault_container_image }}"
+    state: started
+    restart_policy: always
+    env:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+    volumes:
+      - "{{ vault_data_dir }}:/vault/file:Z"
+      - "{{ vault_config_dir }}/config.hcl:/vault/config/config.hcl:Z"
+    networks:
+      - name: "{{ vault_podman_network }}"
+    command: "server"
+
+- name: Create Vault systemd unit
+  command: >
+    podman generate systemd --name vault --files --restart-policy=always
+  args:
+    chdir: /etc/systemd/system
+  register: vault_unit
+  changed_when: false
+
+- name: Enable and start Vault service
+  systemd:
+    name: container-vault.service
+    enabled: true
+    state: started
+    daemon_reload: true

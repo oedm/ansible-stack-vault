@@ -1,0 +1,62 @@
+# roles/traefik/tasks/main.yaml
+- name: Create traefik config dir
+  file:
+    path: "{{ traefik_config_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Write static config
+  copy:
+    dest: "{{ traefik_config_dir }}/traefik.yml"
+    content: |
+      entryPoints:
+        web:
+          address: ":80"
+        websecure:
+          address: ":443"
+      providers:
+        file:
+          filename: "{{ traefik_dynamic_conf }}"
+      api:
+        dashboard: true
+      certificatesResolvers:
+        letsencrypt:
+          acme:
+            email: "{{ domain_email }}"
+            storage: "/etc/traefik/acme.json"
+            httpChallenge:
+              entryPoint: web
+
+- name: Write dynamic config
+  copy:
+    dest: "{{ traefik_dynamic_conf }}"
+    content: |
+      http:
+        routers:
+          vault:
+            rule: "Host(`{{ vault_domain }}`)"
+            entryPoints:
+              - websecure
+            service: vault
+            tls:
+              certResolver: letsencrypt
+        services:
+          vault:
+            loadBalancer:
+              servers:
+                - url: "http://vault:8200"
+
+- name: Create Traefik systemd unit
+  command: >
+    podman generate systemd --name {{ traefik_container_name }} --files --restart-policy=always
+  args:
+    chdir: /etc/systemd/system
+  register: traefik_unit
+  changed_when: false
+
+- name: Enable and start Traefik service
+  systemd:
+    name: container-{{ traefik_container_name }}.service
+    enabled: true
+    state: started
+    daemon_reload: true

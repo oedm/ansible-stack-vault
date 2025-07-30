@@ -1,0 +1,12 @@
+# group_vars/all.yaml
+vault_domain: vault.example.com
+vault_container_image: hashicorp/vault:1.15
+vault_data_dir: /opt/vault/data
+vault_config_dir: /opt/vault/config
+vault_podman_network: traefik
+
+domain_email: hostmaster@example.com
+traefik_image: traefik:latest
+traefik_config_dir: /etc/traefik
+traefik_dynamic_conf: /etc/traefik/dynamic.yml
+traefik_container_name: traefik

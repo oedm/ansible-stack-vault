@@ -1,0 +1,11 @@
+---
+# playbook.yaml
+- name: Setup Vault with Traefik on Podman
+  hosts: localhost
+  become: true
+  vars_files:
+    - group_vars/all.yaml
+    - overwrites.yaml
+  roles:
+    - traefik
+    - vault
