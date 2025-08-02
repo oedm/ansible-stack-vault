@@ -19,7 +19,7 @@ COPY server.conf /etc/pykmip
 
 COPY policy.json /etc/pykmip/policy
 
-RUN ln -sf /dev/stdout /var/log/pykmip/server.log
+#RUN ln -sf /dev/stdout /var/log/pykmip/server.log
 
 EXPOSE 5696
 
