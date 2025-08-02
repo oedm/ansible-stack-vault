@@ -60,8 +60,8 @@
   run_once: true
   register: csr
 
-- name: Sign certificate with our CA
-  community.crypto.x509_certificate_pipe:
+- name: Sign server certificate with our CA
+  community.crypto.x509_certificate:
     csr_content: "{{ csr.csr }}"
     provider: ownca
     ownca_path: /opt/pykmip/certs/ca.crt
@@ -87,8 +87,8 @@
   run_once: true
   register: client_a_csr
 
-- name: Sign certificate with our CA
-  community.crypto.x509_certificate_pipe:
+- name: Sign client certificate with our CA
+  community.crypto.x509_certificate:
     csr_content: "{{ client_a_csr.csr }}"
     provider: ownca
     ownca_path: /opt/pykmip/certs/ca.crt
