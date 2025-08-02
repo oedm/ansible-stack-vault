@@ -128,7 +128,7 @@
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /opt/pykmip/certs:/var/lib/certs:ro,z
-      - /opt/pykmip/state:/var/lib/state:rw:z
+      - /opt/pykmip/state:/var/lib/state:rw,z
     network: wg-bridge
     ports:
       - 127.0.0.1:5696:5696
