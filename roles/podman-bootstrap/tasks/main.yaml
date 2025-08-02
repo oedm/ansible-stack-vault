@@ -6,8 +6,5 @@
     name: wg-bridge
     state: present
     driver: bridge
-    ipam_options:
-      driver: default
-      config:
-        - subnet: 10.64.141.0/28
-          gateway: 10.64.141.1
+    subnet: 10.64.141.0/28
+    gateway: 10.64.141.1
