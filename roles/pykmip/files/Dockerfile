@@ -23,4 +23,6 @@ COPY policy.json /etc/pykmip/policy
 
 EXPOSE 5696
 
-ENTRYPOINT pykmip-server
+# Redirect logs to stdout and use Logstash for log management (if applicable)
+# Ensure pykmip-server logs are directed to stdout
+CMD ["pykmip-server", "-l", "/dev/stdout"]
