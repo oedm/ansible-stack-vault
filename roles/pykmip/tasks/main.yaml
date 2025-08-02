@@ -109,6 +109,7 @@
   loop:
     - { src: "Dockerfile", dest: "/opt/pykmip/build/Dockerfile" }
     - { src: "requirements.txt", dest: "/opt/pykmip/build/requirements.txt" }
+    - { src: "policy.json", dest: "/opt/pykmip/build/policy.json" }
     - { src: "server.conf", dest: "/opt/pykmip/build/server.conf" }
 
 - name: Build PyKMIP container
