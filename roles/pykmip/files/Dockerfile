@@ -13,7 +13,7 @@ RUN mkdir -p /etc/pykmip \
     mkdir -p /etc/pykmip/policy \
     mkdir -p /var/lib/certs \
     mkdir -p /var/lib/state \
-    mkdir -p /var/lib/pykmip
+    mkdir -p /var/log/pykmip
 
 COPY server.conf /etc/pykmip
 
