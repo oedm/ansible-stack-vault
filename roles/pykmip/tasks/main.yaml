@@ -130,8 +130,7 @@
       - /opt/pykmip/certs:/var/lib/certs:ro,z
       - /opt/pykmip/state:/var/lib/state:rw,z
     network: wg-bridge
-    ports:
-      - 127.0.0.1:5696:5696
+    ip: 10.64.141.2
 
 - name: Generate systemd unit file for PyKMIP container
   containers.podman.podman_generate_systemd:
