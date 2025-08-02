@@ -100,7 +100,7 @@
 ### pyPMIP
 
 - name: Setup build environment for PyKMIP
-  ansible.buildin.copy:
+  ansible.builtin.copy:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     owner: root
@@ -141,7 +141,7 @@
     dest: /etc/systemd/system
 
 - name: Enable and start PyKMIP service
-  ansible.buildin.systemd:
+  ansible.builtin.systemd:
     name: container-pykmip
     enabled: true
     state: started
