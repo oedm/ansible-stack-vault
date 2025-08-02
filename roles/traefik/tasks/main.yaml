@@ -12,13 +12,22 @@
       entryPoints:
         web:
           address: ":80"
+          redirections:
+            entrypoint:
+              to: websecure
+              scheme: https
         websecure:
           address: ":443"
-      providers:
-        file:
-          filename: "{{ traefik_dynamic_conf }}"
+        web-internal:
+          address: ":8080"
       api:
         dashboard: true
+        insecure: true
+      providers:
+        docker:
+          endpoint: "unix:///var/run/podman.sock"
+          exposedByDefault: false
+          network: proxy
       certificatesResolvers:
         letsencrypt:
           acme:
@@ -27,36 +36,39 @@
             httpChallenge:
               entryPoint: web
 
-- name: Write dynamic config
-  copy:
-    dest: "{{ traefik_dynamic_conf }}"
-    content: |
-      http:
-        routers:
-          vault:
-            rule: "Host(`{{ vault_domain }}`)"
-            entryPoints:
-              - websecure
-            service: vault
-            tls:
-              certResolver: letsencrypt
-        services:
-          vault:
-            loadBalancer:
-              servers:
-                - url: "http://vault:8200"
+- name: Create Traefik container
+  container.podman.podmain_container:
+    name: {{ traefik_container_name }}
+    image: {{ traefik_container_image }}
+    rm: true
+    state: created
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.traefik.rule: "Host(`localhost`)"
+      traefik.http.routers.traefik.entrypoints: "web-internal"
+      traefik.http.routers.traefik.service: "api@internal"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/podman/podman.sock:/var/run/podman.sock:ro,z
+      - "{{ traefik_config_dir }}:/etc/traefik:rw:z"
+      - "/etc/letsencrypt:/etc/letsencrypt:rw:z"
+    network: proxy
+    ports:
+      - 80:80
+      - 443:443
+      - 127.0.0.1:8080:8080
+    restart_policy: "always"
 
-- name: Create Traefik systemd unit
-  command: >
-    podman generate systemd --name {{ traefik_container_name }} --files --restart-policy=always
-  args:
-    chdir: /etc/systemd/system
-  register: traefik_unit
-  changed_when: false
+- name: Generate systemd unit file for Traefik container
+  containers.podman.podman_generate_systemd:
+    name: {{ traefik_container_name }}
+    new: true
+    no_header: true
+    dest: /etc/systemd/system
 
 - name: Enable and start Traefik service
-  systemd:
-    name: container-{{ traefik_container_name }}.service
+  ansible.buildin.systemd:
+    name: "container-{{ traefik_container_name }}"
     enabled: true
     state: started
     daemon_reload: true

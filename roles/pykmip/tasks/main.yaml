@@ -1,0 +1,148 @@
+# roles/pykmip/tasks/main.yaml
+
+- name: Create cert dir
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /opt/pykmip/certs
+    - /opt/pykmip/state
+    - /opt/pykmip/build
+
+### Generate CA
+
+- name: Create private key (RSA, 4096 bits)
+  community.crypto.openssl_privatekey:
+    path: /opt/pykmip/certs/ca.key
+    size: 4096
+    type: RSA
+
+- name: Create certificate signing request (CSR) for CA certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /opt/pykmip/certs/ca.key
+    common_name: Private PyKMIP CA
+    use_common_name_for_san: false  # since we do not specify SANs, don't use CN as a SAN
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+  register: ca_csr
+
+- name: Create self-signed CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: /opt/pykmip/certs/ca.crt
+    csr_content: "{{ ca_csr.csr }}"
+    privatekey_path: /opt/pykmip/certs/ca.key
+    selfsigned_not_after: +3650d  # valid for ten years
+    selfsigned_not_before: "-1d"  # valid since yesterday
+    provider: selfsigned
+
+### Generate Server Cert
+
+- name: Create private key for new certificate on server
+  community.crypto.openssl_privatekey:
+    path: /opt/pykmip/certs/server.key
+  run_once: true
+
+- name: Create certificate signing request (CSR) for new certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /opt/pykmip/certs/server.key
+    extendedKeyUsage:
+      - serverAuth
+    subject_alt_name:
+      - "IP:10.64.141.2"
+      - "DNS:pykmip.hidden.internal"
+  run_once: true
+  register: csr
+
+- name: Sign certificate with our CA
+  community.crypto.x509_certificate_pipe:
+    csr_content: "{{ csr.csr }}"
+    provider: ownca
+    ownca_path: /opt/pykmip/certs/ca.crt
+    ownca_privatekey_path: /opt/pykmip/certs/ca.key
+    ownca_not_after: +3650d  # valid for one year
+    ownca_not_before: "-1d"  # valid since yesterday
+    path: /opt/pykmip/certs/server.crt
+
+### Generate client cert
+
+- name: Create private key for client A
+  community.crypto.openssl_privatekey:
+    path: /opt/pykmip/certs/client_a.key
+  run_once: true
+
+- name: Create certificate signing request (CSR) for new client certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /opt/pykmip/certs/client_a.key
+    extendedKeyUsage:
+      - clientAuth
+    subject_alt_name:
+      - "IP:10.64.254.5"
+  run_once: true
+  register: client_a_csr
+
+- name: Sign certificate with our CA
+  community.crypto.x509_certificate_pipe:
+    csr_content: "{{ client_a_csr.csr }}"
+    provider: ownca
+    ownca_path: /opt/pykmip/certs/ca.crt
+    ownca_privatekey_path: /opt/pykmip/certs/ca.key
+    ownca_not_after: +3650d  # valid for one year
+    ownca_not_before: "-1d"  # valid since yesterday
+    path: /opt/pykmip/certs/client_a.crt
+
+### pyPMIP
+
+- name: Setup build environment for PyKMIP
+  ansible.buildin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - { src: "Dockerfile", dest: "/opt/pykmip/build/Dockerfile" }
+    - { src: "requirements.txt", dest: "/opt/pykmip/build/requirements.txt" }
+    - { src: "server.conf", dest: "/opt/pykmip/build/server.conf" }
+
+- name: Build PyKMIP container
+  containers.podman.podman_image:
+    name: pykmip
+    path: /opt/pykmip/build
+    state: present
+    tag: latest
+
+- name: Create PyKMIP container
+  container.podman.podmain_container:
+    name: pykmip
+    image: pykmip:latest
+    rm: true
+    state: created
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/pykmip/certs:/var/lib/certs:ro,z
+      - /opt/pykmip/state:/var/lib/state:rw:z
+    network: proxy
+    ports:
+      - 127.0.0.1:5696:5696
+    restart_policy: "always"
+
+- name: Generate systemd unit file for PyKMIP container
+  containers.podman.podman_generate_systemd:
+    name: pykmip
+    new: true
+    no_header: true
+    dest: /etc/systemd/system
+
+- name: Enable and start PyKMIP service
+  ansible.buildin.systemd:
+    name: container-pykmip
+    enabled: true
+    state: started
+    daemon_reload: true

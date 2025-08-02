@@ -6,7 +6,6 @@ vault_config_dir: /opt/vault/config
 vault_podman_network: traefik
 
 domain_email: hostmaster@example.com
-traefik_image: traefik:latest
+traefik_container_image: traefik:3.5
 traefik_config_dir: /etc/traefik
-traefik_dynamic_conf: /etc/traefik/dynamic.yml
 traefik_container_name: traefik

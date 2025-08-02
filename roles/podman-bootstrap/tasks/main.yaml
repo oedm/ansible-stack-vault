@@ -1,0 +1,13 @@
+---
+# file: podman-bootstrap / tasks / main.yaml
+
+- name: Define bridge network published via wireguard
+  containers.podman.podman_network:
+    name: wg-bridge
+    state: present
+    driver: bridge
+    ipam_options:
+      driver: default
+      config:
+        - subnet: 10.64.141.0/28
+          gateway: 10.64.141.1
