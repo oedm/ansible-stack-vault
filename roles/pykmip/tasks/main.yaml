@@ -54,6 +54,7 @@
     privatekey_path: /opt/pykmip/certs/server.key
     extendedKeyUsage:
       - serverAuth
+      - clientAuth
     subject_alt_name:
       - "IP:10.64.141.2"
       - "DNS:pykmip.hidden.internal"
@@ -82,6 +83,7 @@
     privatekey_path: /opt/pykmip/certs/client_a.key
     extendedKeyUsage:
       - clientAuth
+      - serverAuth
     subject_alt_name:
       - "IP:10.64.254.5"
   run_once: true
