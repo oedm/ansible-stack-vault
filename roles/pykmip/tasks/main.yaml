@@ -24,6 +24,10 @@
   community.crypto.openssl_csr_pipe:
     privatekey_path: /opt/pykmip/certs/ca.key
     common_name: Private PyKMIP CA
+    country_name: DE
+    state_or_province_name: lower saxony
+    organization_name: Private
+    organizational_unit_name: Private PKI
     use_common_name_for_san: false  # since we do not specify SANs, don't use CN as a SAN
     basic_constraints:
       - 'CA:TRUE'
@@ -55,6 +59,11 @@
     extendedKeyUsage:
       - serverAuth
       - clientAuth
+    common_name: Private PyKMIP Server
+    country_name: DE
+    state_or_province_name: lower saxony
+    organization_name: Private
+    organizational_unit_name: Private PyKMIP CA
     subject_alt_name:
       - "IP:10.64.141.2"
       - "DNS:pykmip.hidden.internal"
@@ -84,6 +93,11 @@
     extendedKeyUsage:
       - clientAuth
       - serverAuth
+    common_name: Private PyKMIP Client A
+    country_name: DE
+    state_or_province_name: lower saxony
+    organization_name: Private
+    organizational_unit_name: Private PKI
     subject_alt_name:
       - "IP:10.64.254.5"
   run_once: true
