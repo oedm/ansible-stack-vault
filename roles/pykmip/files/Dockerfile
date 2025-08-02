@@ -1,26 +1,38 @@
-FROM python:3.7-alpine
+# Use a base image with Python 3.9 and Alpine Linux for smaller size
+FROM python:3.9-alpine
 
-RUN apk add --no-cache py3-pip openssl
+# Set environment variables for OpenStack application credentials
+ENV OS_USERNAME=your_openstack_username
+ENV OS_PASSWORD=your_openstack_password
+ENV OS_PROJECT_ID=your_openstack_project_id
+ENV OS_APPLICATION_CREDENTIAL_NAME=kmip
+ENV OS_APPLICATION_CREDENTIAL_SECRET=kmip
+ENV OS_AUTH_TYPE=v3applicationcredential
+ENV OS_AUTH_URL=your_os_auth_url
 
-COPY requirements.txt .
+# Install necessary packages (including build dependencies)
+RUN apk update && \
+    apk add --no-cache gcc musl-dev libffi-dev openssl-dev openssh-client git mariadb-dev python3-dev
 
-RUN apk add --no-cache --virtual build-deps \
-    python3-dev openssl-dev libffi-dev musl-dev gcc rust cargo git && \
-    pip install -r requirements.txt --break-system-packages && \
-    apk del build-deps
-
+# Set up directories for certificates and configuration
 RUN mkdir -p /etc/pykmip \
     mkdir -p /etc/pykmip/policy \
     mkdir -p /var/lib/certs \
-    mkdir -p /var/lib/state \
-    mkdir -p /var/log/pykmip
-
-COPY server.conf /etc/pykmip
+    mkdir -p /var/lib/state
 
 COPY policy.json /etc/pykmip/policy
 
-#RUN ln -sf /dev/stdout /var/log/pykmip/server.log
+COPY server.conf /etc/pykmip
 
+# Clone the PyKMIP repository
+RUN git clone https://github.com/sapcc/PyKMIP /tmp/pykmip
+
+# Install PyKMIP from the cloned repository
+RUN pip install -U --upgrade-strategy eager /tmp/pykmip
+
+# Expose the KMIP server port
 EXPOSE 5696
 
-ENTRYPOINT pykmip-server
+# Redirect logs to stdout and use Logstash for log management (if applicable)
+# Ensure pykmip-server logs are directed to stdout
+CMD ["pykmip-server", "-l", "/dev/stdout"]
