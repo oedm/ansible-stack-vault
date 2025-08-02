@@ -119,7 +119,7 @@
     tag: latest
 
 - name: Create PyKMIP container
-  containers.podman.podmain_container:
+  containers.podman.podman_container:
     name: pykmip
     image: pykmip:latest
     rm: true
