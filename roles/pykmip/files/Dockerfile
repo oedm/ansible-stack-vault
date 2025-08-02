@@ -1,4 +1,4 @@
-FROM alpine:3.22.1
+FROM python:3.7-alpine
 
 RUN apk add --no-cache py3-pip openssl
 
