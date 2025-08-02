@@ -12,7 +12,8 @@ RUN apk add --no-cache --virtual build-deps \
 RUN mkdir -p /etc/pykmip \
     mkdir -p /etc/pykmip/policy \
     mkdir -p /var/lib/certs \
-    mkdir -p /var/lib/state
+    mkdir -p /var/lib/state \
+    mkdir -p /var/lib/pykmip
 
 COPY server.conf /etc/pykmip
 
