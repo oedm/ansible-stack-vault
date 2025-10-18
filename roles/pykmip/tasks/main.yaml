@@ -113,6 +113,73 @@
     ownca_not_before: "-1d"  # valid since yesterday
     path: /opt/pykmip/certs/client_a.crt
 
+
+### Generate Client PA A
+
+- name: Create private key for client PA DS923 A
+  community.crypto.openssl_privatekey:
+    path: /opt/pykmip/certs/client_pa_ds923_a.key
+  run_once: true
+
+- name: Create certificate signing request (CSR) for new client certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /opt/pykmip/certs/client_pa_ds923_a.key
+    extendedKeyUsage:
+      - clientAuth
+      - serverAuth
+    common_name: Private PyKMIP Client A
+    country_name: DE
+    state_or_province_name: bavaria
+    organization_name: Private
+    organizational_unit_name: Private PKI
+    subject_alt_name:
+      - "IP:10.100.100.1"
+  run_once: true
+  register: client_pa_a_csr
+
+- name: Sign PA A client certificate with our CA
+  community.crypto.x509_certificate:
+    csr_content: "{{ client_pa_a_csr.csr }}"
+    provider: ownca
+    ownca_path: /opt/pykmip/certs/ca.crt
+    ownca_privatekey_path: /opt/pykmip/certs/ca.key
+    ownca_not_after: +3650d  # valid for one year
+    ownca_not_before: "-1d"  # valid since yesterday
+    path: /opt/pykmip/certs/client_pa_ds923_a.crt
+
+### Generate Client PA B 
+
+- name: Create private key for client PA DS-Worker A
+  community.crypto.openssl_privatekey:
+    path: /opt/pykmip/certs/client_pa_ds-worker_a.key
+  run_once: true
+
+- name: Create certificate signing request (CSR) for new client certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /opt/pykmip/certs/client_pa_ds-worker_a.key
+    extendedKeyUsage:
+      - clientAuth
+      - serverAuth
+    common_name: Private PyKMIP Client A
+    country_name: DE
+    state_or_province_name: bavaria
+    organization_name: Private
+    organizational_unit_name: Private PKI
+    subject_alt_name:
+      - "IP:10.100.100.2"
+  run_once: true
+  register: client_pa_b_csr
+
+- name: Sign PA A client certificate with our CA
+  community.crypto.x509_certificate:
+    csr_content: "{{ client_pa_b_csr.csr }}"
+    provider: ownca
+    ownca_path: /opt/pykmip/certs/ca.crt
+    ownca_privatekey_path: /opt/pykmip/certs/ca.key
+    ownca_not_after: +3650d  # valid for one year
+    ownca_not_before: "-1d"  # valid since yesterday
+    path: /opt/pykmip/certs/client_pa_ds-worker_a.crt
+
 ### pyPMIP
 
 - name: Setup build environment for PyKMIP
